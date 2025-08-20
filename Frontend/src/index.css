@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base{
+    @font-face {
+        font-family: ansh;
+        src: url('../src/font/Roboto-Black.ttf');
+    }
+}
