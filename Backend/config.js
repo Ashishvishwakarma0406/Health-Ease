@@ -1,2 +1,6 @@
-export const database='mongodb+srv://ashishvishwakarma0606:Split4504@split.gb0ol.mongodb.net/?retryWrites=true&w=majority&appName=Split';
-export const jwtSecret = '48u1545uA';
+// Backend/config.js
+import dotenv from "dotenv";
+dotenv.config();
+
+export const database = process.env.MONGODB_URI;  // from .env
+export const jwtSecret = process.env.JWT_SECRET; // for JWT auth

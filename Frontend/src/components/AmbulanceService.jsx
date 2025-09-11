@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import ambulanceImage from "../images/ambulance.png.jpg"; // Background image
 import ambulanceMain from "../images/ambulance-main.png.png"; // Ambulance image for left box
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function AmbulanceService() {
   const [location, setLocation] = useState({ latitude: null, longitude: null });
@@ -30,6 +31,8 @@ function AmbulanceService() {
     }
   };
 
+
+
   const handleSubmit = async () => {
     const data = {
       latitude: location.latitude,
@@ -38,13 +41,14 @@ function AmbulanceService() {
     };
 
     try {
-      const response = await axios.post("http://localhost:5000/api/users/ambulance", data);
+      const response = await axios.post(`${API_BASE_URL}/api/users/ambulance`, data);
       alert("Ambulance request submitted successfully!");
     } catch (error) {
       console.error("Error saving location:", error);
       alert("Failed to submit the ambulance request. Please try again.");
     }
   };
+
 
   return (
     <div

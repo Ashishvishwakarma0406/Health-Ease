@@ -22,18 +22,21 @@ function OnlineConsultation() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ✅ Use env variable for backend URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   // Fetch doctors data
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/doctors');
+        const response = await axios.get(`${API_BASE_URL}/api/doctors`);
         const doctorData = response.data;
         setDoctors(doctorData);
         setFilteredDoctors(doctorData); // Initially, show all doctors
-        
+
         // Extract unique locations from doctor data
         const uniqueLocations = [...new Set(doctorData.map(doctor => doctor.location))];
-        setLocations(uniqueLocations); // Set the locations in the state
+        setLocations(uniqueLocations);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching doctors:', error);
@@ -42,23 +45,25 @@ function OnlineConsultation() {
     };
 
     fetchDoctors();
-  }, []);
+  }, [API_BASE_URL]);
 
   // Handle changes in form inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
-    // If location changes, filter the doctors
     if (name === 'location') {
-      filterDoctors(value); // Filter doctors based on location
+      filterDoctors(value);
     }
 
-    // If doctorName changes, update doctorId and doctorName
     if (name === 'doctorName') {
       const selectedDoctor = doctors.find(doctor => doctor.name === value);
       if (selectedDoctor) {
-        setFormData({ ...formData, doctorId: selectedDoctor._id, doctorName: selectedDoctor.name });
+        setFormData(prev => ({
+          ...prev,
+          doctorId: selectedDoctor._id,
+          doctorName: selectedDoctor.name,
+        }));
       }
     }
   };
@@ -66,7 +71,7 @@ function OnlineConsultation() {
   // Filter doctors based on location
   const filterDoctors = (location) => {
     if (location === '') {
-      setFilteredDoctors(doctors); // If location is empty, show all doctors
+      setFilteredDoctors(doctors);
     } else {
       setFilteredDoctors(
         doctors.filter(doctor =>
@@ -80,19 +85,22 @@ function OnlineConsultation() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    const token = localStorage.getItem('token'); // Or wherever you're storing the JWT token
-
+    const token = localStorage.getItem('token');
     if (!token) {
-      navigate("/login"); // Redirect to login page if no token is found
+      navigate('/login');
       return;
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/users/book-appointment', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`, // Include token in the request headers
-        },
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/api/users/book-appointment`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setResponseMessage(response.data.message);
       alert('Appointment booked successfully');
     } catch (error) {
@@ -101,7 +109,6 @@ function OnlineConsultation() {
     }
   };
 
-  // Get today's date in YYYY-MM-DD format for the date input
   const today = new Date().toISOString().split('T')[0];
 
   return (
@@ -131,8 +138,6 @@ function OnlineConsultation() {
 
         <div className="mt-12 p-6 md:p-8 rounded-lg shadow-xl max-w-3xl w-full mx-auto backdrop-blur-xl bg-white/20 border border-white/30">
           <form onSubmit={handleFormSubmit} className="mt-6 space-y-4">
-            
-            {/* Name Input */}
             <input
               type="text"
               name="name"
@@ -141,8 +146,6 @@ function OnlineConsultation() {
               onChange={handleInputChange}
               className="w-full p-3 border rounded-md shadow-sm focus:ring-2 focus:ring-[#0095DE] text-black placeholder-gray-500 bg-white backdrop-blur-md"
             />
-            
-            {/* Email Input */}
             <input
               type="email"
               name="email"
@@ -151,8 +154,6 @@ function OnlineConsultation() {
               onChange={handleInputChange}
               className="w-full p-3 border rounded-md shadow-sm focus:ring-2 focus:ring-[#0095DE] text-black placeholder-gray-500 bg-white backdrop-blur-md"
             />
-
-            {/* Location Dropdown */}
             <select
               name="location"
               value={formData.location}
@@ -166,8 +167,6 @@ function OnlineConsultation() {
                 </option>
               ))}
             </select>
-
-            {/* Doctor Dropdown */}
             <select
               name="doctorName"
               value={formData.doctorName}
@@ -185,29 +184,23 @@ function OnlineConsultation() {
                 ))
               )}
             </select>
-
-            {/* Date Input */}
             <input
               type="date"
               name="date"
               value={formData.date}
               onChange={handleInputChange}
-              min={today} // Set minimum date to today
+              min={today}
               className="w-full p-3 border rounded-md shadow-sm focus:ring-2 focus:ring-[#0095DE] text-black placeholder-gray-500 bg-white backdrop-blur-md"
             />
-
-            {/* Time Input */}
             <input
               type="time"
               name="time"
               value={formData.time}
               onChange={handleInputChange}
-              min="10:00" // Set minimum time to 10:00 AM
-              max="22:00" // Set maximum time to 10:00 PM
+              min="10:00"
+              max="22:00"
               className="w-full p-3 border rounded-md shadow-sm focus:ring-2 focus:ring-[#0095DE] text-black placeholder-gray-500 bg-white backdrop-blur-md"
             />
-
-            {/* Symptoms Input */}
             <textarea
               name="symptoms"
               placeholder="Symptoms"
@@ -215,8 +208,6 @@ function OnlineConsultation() {
               onChange={handleInputChange}
               className="w-full p-3 border rounded-md shadow-sm focus:ring-2 focus:ring-[#0095DE] text-black placeholder-gray-500 bg-white backdrop-blur-md"
             />
-            
-            {/* Submit Button */}
             <button
               type="submit"
               className="w-full bg-[#0095DE] text-white py-3 px-6 rounded-md hover:bg-[#007bbd]"
@@ -225,7 +216,6 @@ function OnlineConsultation() {
             </button>
           </form>
         </div>
-
       </div>
     </div>
   );

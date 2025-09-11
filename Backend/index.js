@@ -1,67 +1,95 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Backend/index.js
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { exec } from "child_process";
 
-import userRoutes from './routes/users.js';
-import doctorRoutes from './routes/doctors.js';
-import User from './models/userModel.js';
-import bcrypt from 'bcrypt';
-import { database } from './config.js';
+import userRoutes from "./routes/users.js";
+import doctorRoutes from "./routes/doctors.js";
+import User from "./models/userModel.js";
+import bcrypt from "bcrypt";
+import { database } from "./config.js"; // DB from .env/config
 
+// Load env variables
 dotenv.config();
 
+// Core setup
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || "development";
+const CLIENT_URL = process.env.CLIENT_URL || "*";
 
-// Static Path
-const dirname = path.dirname(fileURLToPath(import.meta.url));
-const buildpath = path.join(dirname, "../Frontend/dist");
+// Path setup
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const buildPath = path.join(__dirname, "../Frontend/dist");
 
 // Middleware
-app.use(cors({ origin: '*' }));
+const corsOptions = {
+  origin: NODE_ENV === "production" ? CLIENT_URL : "*",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(express.static(buildpath));
 
-// Routes
+// Serve frontend (only in production)
+if (NODE_ENV === "production" && fs.existsSync(buildPath)) {
+  app.use(express.static(buildPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(buildPath, "index.html"));
+  });
+}
 
+// ⚠️ Local-only route for launching Streamlit analyzer
 app.get("/start-analyzer", (req, res) => {
-  const port = 5081; // Set Streamlit Port
-  const command = `streamlit run Backend/report_analyzer/medical_analyzer.py --server.port ${port} --server.headless true`;
+  if (NODE_ENV === "production") {
+    return res.status(403).json({
+      message:
+        "Disabled in production. Deploy the Streamlit analyzer separately and set REPORT_ANALYZER_URL in env.",
+    });
+  }
+
+  const port = process.env.REPORT_ANALYZER_PORT || 5081;
+  const scriptPath = path.join(
+    __dirname,
+    "report_analyzer",
+    "medical_analyzer.py"
+  );
+  const command = `streamlit run ${scriptPath} --server.port ${port} --server.headless true`;
 
   const streamlitProcess = exec(command, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error starting Streamlit: ${error.message}`);
-      return res.status(500).json({ message: "❌ Failed to start Report Analyzer" });
+      return;
     }
-
-    if (stderr) {
-      console.error(`Streamlit error: ${stderr}`);
-    }
-
-    console.log(stdout); // Log the Streamlit output (optional for debugging)
+    if (stderr) console.error(`Streamlit stderr: ${stderr}`);
+    console.log(stdout);
   });
 
-  // Optional: Check if the port is open and Streamlit is ready (by pinging the port)
   setTimeout(() => {
-    res.json({ message: `✅ Report Analyzer started on http://localhost:${port}` });
-  }, 3000); // Adjust or verify delay to check if the app is fully initialized
+    res.json({ message: `Report Analyzer started on http://localhost:${port}` });
+  }, 3000);
 });
 
-// Register route
-app.post('/register', async (req, res) => {
+// --- Auth/Register Route (basic)
+app.post("/register", async (req, res) => {
   try {
     const { uniqueId, username, email, phoneNo, password } = req.body;
 
     if (!uniqueId || !username || !email || !phoneNo || !password) {
-      return res.status(400).json({ error: 'All fields are required.' });
+      return res.status(400).json({ error: "All fields are required." });
     }
 
-    const existingUser = await User.findOne({ $or: [{ uniqueId }, { username }] });
+    const existingUser = await User.findOne({
+      $or: [{ uniqueId }, { username }, { email }],
+    });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists with this username or email.' });
+      return res
+        .status(400)
+        .json({ error: "User already exists with this ID, username, or email." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -74,25 +102,29 @@ app.post('/register', async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error during registration:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// User and Doctor routes
-app.use('/api/users', userRoutes);
-app.use('/api/doctors', doctorRoutes);
+// --- API Routes
+app.use("/api/users", userRoutes);
+app.use("/api/doctors", doctorRoutes);
 
-// Connect to the database
-mongoose.connect(database)
+// --- MongoDB connection
+const DB_URI = process.env.MONGODB_URI || database;
+
+
+mongoose
+  .connect(DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log("Connected to MongoDB");
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT} (NODE_ENV=${NODE_ENV})`);
     });
   })
   .catch((error) => {
-    console.error('Error connecting to database:', error);
+    console.error("Error connecting to database:", error);
   });

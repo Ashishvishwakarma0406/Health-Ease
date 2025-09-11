@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function AppointmentPage() {
   const [doctors, setDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
@@ -20,7 +22,7 @@ function AppointmentPage() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/doctors');
+        const response = await axios.get(`${API_BASE_URL}/api/doctors`);
         setDoctors(response.data);
         setFilteredDoctors(response.data);
       } catch (error) {
@@ -73,7 +75,7 @@ function AppointmentPage() {
         return;
       }
 
-      await axios.post('http://localhost:5000/api/users/appointments', appointmentData, {
+      await axios.post(`${API_BASE_URL}/api/users/appointments`, appointmentData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert('Appointment booked successfully');

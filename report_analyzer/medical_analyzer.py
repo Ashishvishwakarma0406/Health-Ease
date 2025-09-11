@@ -37,7 +37,7 @@ model = genai.GenerativeModel(
 
 # Streamlit UI Setup
 st.set_page_config(page_title="Medical Report Analyzer", page_icon="🩺", layout="wide")
-st.title("🩺 Medical Report Analyzer")
+st.title("Medical Report Analyzer")
 st.subheader("Upload a medical report (text, PDF, Word, or scanned image) for AI-based analysis.")
 
 # File uploader
@@ -95,13 +95,13 @@ if st.button("Analyze Report"):
                 response = model.generate_content(prompt_parts)
 
             if response and response.text:
-                st.subheader("📄 Medical Report Analysis")
+                st.subheader("Medical Report Analysis")
                 st.markdown(response.text)
             else:
-                st.warning("⚠️ Unable to analyze the report. Please try again with a different file.")
+                st.warning("Unable to analyze the report. Please try again with a different file.")
 
         else:
-            st.error("❌ Could not extract text. Ensure the file is clear and readable.")
+            st.error("Could not extract text. Ensure the file is clear and readable.")
 
     else:
-        st.error("❌ Please upload a file before clicking Analyze.")
+        st.error("Please upload a file before clicking Analyze.")
