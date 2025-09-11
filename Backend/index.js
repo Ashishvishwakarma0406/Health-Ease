@@ -12,30 +12,33 @@ import userRoutes from "./routes/users.js";
 import doctorRoutes from "./routes/doctors.js";
 import User from "./models/userModel.js";
 import bcrypt from "bcrypt";
-import { database } from "./config.js"; // DB from .env/config
+import { database } from "./config.js"; // DB fallback
 
-// Load env variables
+// Load environment variables
 dotenv.config();
 
 // Core setup
 const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
-const CLIENT_URL = process.env.CLIENT_URL || "*";
+const CLIENT_URL = process.env.CLIENT_URL || "https://health-ease-theta.vercel.app/"; // Set your Vercel URL
 
-// Path setup
+// Path setup for production frontend
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const buildPath = path.join(__dirname, "../Frontend/dist");
 
 // Middleware
-const corsOptions = {
-  origin: NODE_ENV === "production" ? CLIENT_URL : "*",
-  credentials: true,
-};
-app.use(cors(corsOptions));
 app.use(express.json());
 
-// Serve frontend (only in production)
+// CORS configuration
+app.use(
+  cors({
+    origin: NODE_ENV === "production" ? CLIENT_URL : "*",
+    credentials: true,
+  })
+);
+
+// Serve frontend in production
 if (NODE_ENV === "production" && fs.existsSync(buildPath)) {
   app.use(express.static(buildPath));
   app.get("*", (req, res) => {
@@ -43,7 +46,7 @@ if (NODE_ENV === "production" && fs.existsSync(buildPath)) {
   });
 }
 
-// ⚠️ Local-only route for launching Streamlit analyzer
+// Local-only route for launching Streamlit analyzer
 app.get("/start-analyzer", (req, res) => {
   if (NODE_ENV === "production") {
     return res.status(403).json({
@@ -53,18 +56,11 @@ app.get("/start-analyzer", (req, res) => {
   }
 
   const port = process.env.REPORT_ANALYZER_PORT || 5081;
-  const scriptPath = path.join(
-    __dirname,
-    "report_analyzer",
-    "medical_analyzer.py"
-  );
+  const scriptPath = path.join(__dirname, "report_analyzer", "medical_analyzer.py");
   const command = `streamlit run ${scriptPath} --server.port ${port} --server.headless true`;
 
   const streamlitProcess = exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Error starting Streamlit: ${error.message}`);
-      return;
-    }
+    if (error) console.error(`Error starting Streamlit: ${error.message}`);
     if (stderr) console.error(`Streamlit stderr: ${stderr}`);
     console.log(stdout);
   });
@@ -74,7 +70,7 @@ app.get("/start-analyzer", (req, res) => {
   }, 3000);
 });
 
-// --- Auth/Register Route (basic)
+// --- Auth/Register Route
 app.post("/register", async (req, res) => {
   try {
     const { uniqueId, username, email, phoneNo, password } = req.body;
@@ -86,6 +82,7 @@ app.post("/register", async (req, res) => {
     const existingUser = await User.findOne({
       $or: [{ uniqueId }, { username }, { email }],
     });
+
     if (existingUser) {
       return res
         .status(400)
@@ -93,6 +90,7 @@ app.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       uniqueId,
       username,
@@ -109,13 +107,31 @@ app.post("/register", async (req, res) => {
   }
 });
 
+// --- Auth/Login Route
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "All fields are required." });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "Invalid credentials." });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials." });
+
+    res.status(200).json({ message: "Login successful", userId: user._id, username: user.username });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // --- API Routes
 app.use("/api/users", userRoutes);
 app.use("/api/doctors", doctorRoutes);
 
 // --- MongoDB connection
 const DB_URI = process.env.MONGODB_URI || database;
-
 
 mongoose
   .connect(DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })

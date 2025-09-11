@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Ashishvishwakarma0406/Health-Ease/issues"
   },
-  "homepage": "https://github.com/Ashishvishwakarma0406/Health-Ease#readme"
+  "homepage": "https://github.com/Ashishvishwakarma0406/Health-Ease#readme",
+  "dependencies": {
+    "cors": "^2.8.5"
+  }
 }
