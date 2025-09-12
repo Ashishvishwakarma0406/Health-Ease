@@ -21,7 +21,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
-const CLIENT_URL = process.env.CLIENT_URL || "https://health-ease-theta.vercel.app/"; // Set your Vercel URL
+const CLIENT_URL = process.env.CLIENT_URL || "https://health-ease-theta.vercel.app"; // Set your Vercel URL
 
 // Path setup for production frontend
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,10 +33,14 @@ app.use(express.json());
 // CORS configuration
 app.use(
   cors({
-    origin: NODE_ENV === "production" ? CLIENT_URL : "*",
+    origin: [
+      "http://localhost:5173",   // for local Vite dev
+      "https://health-ease-theta.vercel.app" // your Vercel frontend
+    ],
     credentials: true,
   })
 );
+
 
 // Serve frontend in production
 if (NODE_ENV === "production" && fs.existsSync(buildPath)) {
