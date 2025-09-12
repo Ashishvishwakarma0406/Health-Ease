@@ -31,15 +31,12 @@ function AmbulanceService() {
     }
   };
 
-
-
   const handleSubmit = async () => {
     const data = {
       latitude: location.latitude,
       longitude: location.longitude,
       manualLocation: manualLocation || null,
     };
-
     try {
       const response = await axios.post(`${API_BASE_URL}/api/users/ambulance`, data);
       alert("Ambulance request submitted successfully!");
@@ -48,7 +45,6 @@ function AmbulanceService() {
       alert("Failed to submit the ambulance request. Please try again.");
     }
   };
-
 
   return (
     <div
@@ -66,78 +62,79 @@ function AmbulanceService() {
       {/* Content Wrapper */}
       <div className="relative z-10">
         {/* Page Heading */}
-        <div className="text-center pt-[12vmin] mb-[4vmin]">
-          <h1 className="text-5xl font-bold text-[#0095DE]">Ambulance Service</h1>
-        </div>
+        <header className="text-center pt-[12vmin] mb-[4vmin] px-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#0095DE]">
+            Ambulance Service
+          </h1>
+        </header>
 
         {/* Main Content */}
-        <div className="flex flex-wrap justify-center items-start gap-[5vmin] m-[5vmin]">
+        <main className="flex flex-col md:flex-row justify-center items-start gap-6 md:gap-[5vmin] m-4 md:m-[5vmin]">
           {/* Left Content - Emergency Response */}
-          <div className="w-[50%] rounded-2xl border-2 border-[#0095DE] p-[2vmin] shadow-lg bg-white">
+          <section className="w-full md:w-1/2 rounded-2xl border-2 border-[#0095DE] p-4 md:p-[2vmin] shadow-lg bg-white">
             {/* Heading */}
-            <div className="text-center mb-[2vmin]">
-              <p className="font-bold text-3xl text-[#0095DE]">Reliable and Fast</p>
-              <p className="font-bold text-3xl text-[#0095DE]">
+            <div className="text-center mb-4 md:mb-[2vmin]">
+              <p className="font-bold text-xl sm:text-2xl md:text-3xl text-[#0095DE]">
+                Reliable and Fast
+              </p>
+              <p className="font-bold text-xl sm:text-2xl md:text-3xl text-[#0095DE]">
                 Ambulance Services, Anytime.
               </p>
             </div>
 
             {/* Content */}
-            <div className="flex items-center gap-[2vmin]">
+            <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-[2vmin]">
               {/* Image */}
-              <div className="w-[750px] h-[170px]">
+              <div className="w-full sm:w-[300px] md:w-[350px] h-[170px] flex-shrink-0">
                 <img
                   src={ambulanceMain}
                   alt="Ambulance Service"
                   className="w-full h-full object-cover rounded-[15px]"
                 />
               </div>
+
               {/* Description */}
-              <p className="text-justify">
-                At <b>Health Ease</b>, we provide 24/7 ambulance services ensuring
-                rapid response during critical moments. Our skilled paramedics and
-                well-equipped vehicles are ready to bring you life-saving assistance
-                whenever required. Your safety is our top priority.
+              <p className="text-justify text-sm sm:text-base md:text-base">
+                At <b>Health Ease</b>, we provide 24/7 ambulance services ensuring rapid response during critical moments. Our skilled paramedics and well-equipped vehicles are ready to bring you life-saving assistance whenever required. Your safety is our top priority.
               </p>
             </div>
 
             {/* Location Input */}
-            <div className="mt-[2vmin]">
+            <div className="mt-4 md:mt-[2vmin]">
               {location.latitude && location.longitude ? (
-                <p className="text-green-500">
+                <p className="text-green-500 text-sm sm:text-base">
                   Location fetched: Latitude {location.latitude}, Longitude {location.longitude}
                 </p>
               ) : (
                 <button
                   onClick={handleGetLocation}
-                  className="w-full p-[1vmin] text-center rounded-md text-white bg-gradient-to-r from-[#A7E2FF] to-[#0095DE] hover:shadow-lg hover:scale-105 transition duration-300 ease-in-out"
+                  className="w-full p-3 text-center rounded-md text-white bg-gradient-to-r from-[#A7E2FF] to-[#0095DE] hover:shadow-lg hover:scale-105 transition duration-300 ease-in-out text-sm sm:text-base"
                 >
                   {loading ? "Fetching Location..." : "Use Current Location"}
                 </button>
               )}
-
               <div className="mt-4">
                 <input
                   type="text"
                   placeholder="Enter location manually (optional)"
                   value={manualLocation}
                   onChange={(e) => setManualLocation(e.target.value)}
-                  className="w-full p-[1vmin] border rounded-md"
+                  className="w-full p-3 border rounded-md text-sm sm:text-base"
                 />
               </div>
             </div>
 
             {/* Call to Action */}
-            <div className="mt-[2vmin]">
+            <div className="mt-4 md:mt-[2vmin]">
               <button
                 onClick={handleSubmit}
-                className="w-full p-[1vmin] text-center rounded-md text-white bg-gradient-to-r from-[#A7E2FF] to-[#0095DE] hover:shadow-lg hover:scale-105 transition duration-300 ease-in-out"
+                className="w-full p-3 text-center rounded-md text-white bg-gradient-to-r from-[#A7E2FF] to-[#0095DE] hover:shadow-lg hover:scale-105 transition duration-300 ease-in-out text-sm sm:text-base"
               >
                 Submit Request
               </button>
             </div>
-          </div>
-        </div>
+          </section>
+        </main>
       </div>
     </div>
   );
